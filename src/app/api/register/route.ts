@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import connectDB from "@/app/config/connection"; // Adjust according to your project structure
 import User from "@/app/models/User"; // Adjust according to your project structure
-import path from "path";
-import { writeFile, mkdir } from "fs/promises";
 import { randomBytes } from "crypto"; // For generating verification token
 import nodemailer from "nodemailer"; // For sending email verification links
+import { v2 as cloudinary } from 'cloudinary';
+import streamifier from 'streamifier'; // For converting Buffer to stream
 
 // API configuration
 export const config = {
@@ -14,12 +14,19 @@ export const config = {
   },
 };
 
+// Cloudinary configuration
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY, 
+  api_secret: process.env.CLOUDINARY_API_SECRET 
+});
+
 // Constants for file validation
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Function to send verification email
-const sendVerificationEmail = async (email:string, token:string) => {
+const sendVerificationEmail = async (email: string, token: string) => {
   const transporter = nodemailer.createTransport({
     service: "gmail", // You can configure this for your preferred email provider
     auth: {
@@ -38,6 +45,32 @@ const sendVerificationEmail = async (email:string, token:string) => {
   };
 
   await transporter.sendMail(mailOptions);
+};
+
+// Helper function to upload image to Cloudinary
+const uploadImageToCloudinary = async (buffer: Buffer, publicId: string) => {
+  const stream = streamifier.createReadStream(buffer); // Convert buffer to stream
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        public_id: publicId,
+        resource_type: 'image',
+        fetch_format: 'auto',
+        quality: 'auto'
+      },
+      (error, result) => {
+        if (error) {
+          reject(error); // Reject the promise on failure
+        } else {
+          resolve(result); // Resolve the promise with the result
+        }
+      }
+    );
+    
+    // Pipe the buffer stream to Cloudinary
+    stream.pipe(uploadStream);
+  });
 };
 
 // User registration logic
@@ -59,39 +92,45 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!username || !email || !password || !address || !phoneNumber || !selectedState || !zipCode || !profileImage) {
-      return NextResponse.json({ Message: "Please fill in all fields.", status: 400 }); // Bad request
+      return NextResponse.json({ message: "Please fill in all fields.", statusCode: 400 }); // Bad request
     }
 
     // Validate file type and size
     if (!ALLOWED_IMAGE_TYPES.includes(profileImage.type)) {
-      return NextResponse.json({ Message: "Invalid file type. Only JPEG and PNG allowed.", status: 400 });
+      return NextResponse.json({ message: "Invalid file type. Only JPEG and PNG allowed.", statusCode: 400 });
     }
 
     if (profileImage.size > MAX_IMAGE_SIZE) {
-      return NextResponse.json({ Message: "File size exceeds the 5MB limit.", status: 400 });
+      return NextResponse.json({ message: "File size exceeds the 5MB limit.", statusCode: 400 });
     }
 
     // Check if the email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return NextResponse.json({ Message: "Email already exists", status: 409 }); // Conflict
+      return NextResponse.json({ message: "Email already exists", statusCode: 409 }); // Conflict
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Generate a unique filename for the profile image
-    const filename = `${Date.now()}_${profileImage.name.replaceAll(" ", "_")}`;
-    
-    // Define the upload directory
-    const uploadDir = path.join("/tmp","/public/uploads");
-    
-    // Create the uploads directory if it doesn't exist
-    await mkdir(uploadDir, { recursive: true });
+    const cloudinaryPublicId = `user_profile_${Date.now()}_${username}`;
 
-    // Convert the profile image to a buffer and save it to the upload directory
+    // Convert the profile image to a buffer
     const buffer = Buffer.from(await profileImage.arrayBuffer());
-    await writeFile(path.join(uploadDir, filename), buffer);
+
+    // Upload the image to Cloudinary
+    const uploadResult = await uploadImageToCloudinary(buffer, cloudinaryPublicId);
+
+    if (!uploadResult) {
+      return NextResponse.json({ message: "Cloudinary upload failed", statusCode: 500 });
+    }
+
+    // Construct optimized image URL
+    const optimizeUrl = cloudinary.url(cloudinaryPublicId, {
+      fetch_format: 'auto',
+      quality: 'auto',
+    });
 
     // Generate a unique email verification token
     const emailVerificationToken = randomBytes(32).toString("hex");
@@ -109,7 +148,7 @@ export async function POST(request: NextRequest) {
       state: selectedState,
       zipCode,
       phone: phoneNumber,
-      profileImage: `${uploadDir}/${filename}`, // Save the relative URL for the image
+      profileImage: optimizeUrl, // Save the optimized Cloudinary image URL
       emailVerificationToken, // Save the verification token
       emailVerificationTokenExpiration, // Save the expiration timestamp
     });
@@ -120,10 +159,10 @@ export async function POST(request: NextRequest) {
     // Send email verification link
     await sendVerificationEmail(email, emailVerificationToken);
 
-    return NextResponse.json({ Message: "User registered successfully. Please check your email for verification.", status: 201 }); // Created
+    return NextResponse.json({ message: "User registered successfully. Please check your email for verification.", statusCode: 201 }); // Created
 
   } catch (error) {
     console.error("Error occurred during registration:", error);
-    return NextResponse.json({ Message: "An error occurred during registration", status: 500 }); // Internal Server Error
+    return NextResponse.json({ message: "An error occurred during registration", statusCode: 500 }); // Internal Server Error
   }
 }
