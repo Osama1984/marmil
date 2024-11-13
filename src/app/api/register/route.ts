@@ -120,17 +120,11 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await profileImage.arrayBuffer());
 
     // Upload the image to Cloudinary
-    const uploadResult = await uploadImageToCloudinary(buffer, cloudinaryPublicId);
-
+    const uploadResult:any = await uploadImageToCloudinary(buffer, cloudinaryPublicId);
+    console.log(uploadResult);
     if (!uploadResult) {
       return NextResponse.json({ message: "Cloudinary upload failed", statusCode: 500 });
     }
-
-    // Construct optimized image URL
-    const optimizeUrl = cloudinary.url(cloudinaryPublicId, {
-      fetch_format: 'auto',
-      quality: 'auto',
-    });
 
     // Generate a unique email verification token
     const emailVerificationToken = randomBytes(32).toString("hex");
@@ -148,7 +142,7 @@ export async function POST(request: NextRequest) {
       state: selectedState,
       zipCode,
       phone: phoneNumber,
-      profileImage: optimizeUrl, // Save the optimized Cloudinary image URL
+      profileImage: uploadResult.secure_url, // Save the optimized Cloudinary image URL
       emailVerificationToken, // Save the verification token
       emailVerificationTokenExpiration, // Save the expiration timestamp
     });
