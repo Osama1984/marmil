@@ -4,7 +4,7 @@ import DropZone from '@/app/components/DropZone';
 import Options from '@/app/components/Options';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; // Import Toastify styles
-import { useAppDispatch, useAppSelector } from '@/lib/hooks';
+import { useAppSelector } from '@/lib/hooks';
 
 interface Option {
   key: string;
@@ -32,8 +32,6 @@ const Dashboard = () => {
   });
 
   const [userProducts, setUserProducts] = useState<any[]>([]); // State to store the user products
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const user = useAppSelector((state) => state.user); // Access user from Redux
 
   // Fetch product data when in edit mode

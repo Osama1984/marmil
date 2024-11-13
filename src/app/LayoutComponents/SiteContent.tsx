@@ -1,7 +1,7 @@
 'use client';
 import { resize } from '@/lib/features/UISlice';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 
 export default function SiteContent({
@@ -10,9 +10,6 @@ export default function SiteContent({
     children: React.ReactNode;
 }) {
     const dispatch = useAppDispatch();
-    const screenSize = useAppSelector((state) => state.ui.screenSize);
-    const currentwidth = useAppSelector((state) => state.ui.width);
-    const currentheight = useAppSelector((state) => state.ui.height);
 
     // Set up useResizeDetector to listen for resizing
     const { width, height, ref } = useResizeDetector({

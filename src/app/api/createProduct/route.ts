@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ Message: "Main image is required." }, { status: 400 });
     }
 
-    if (parsedOptions.some((option: any) => !option.key || !option.value)) {
+    if (parsedOptions.some((option: {key:string, value:string}) => !option.key || !option.value)) {
       return NextResponse.json({ Message: "Options must have both a key and a value." }, { status: 400 });
     }
 

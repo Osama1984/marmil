@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/lib/hooks';
-import { loginUser, setUserDetails, updateUserProfile } from '@/lib/features/UserSlice'; // Import Redux action
+import { loginUser, setUserDetails } from '@/lib/features/UserSlice'; // Import Redux action
 import axios from 'axios'; // For making API calls
 import { states } from '@/app/helper/states'; // List of US States (abbreviations + names)
 import { isTokenValid } from '../utils/token';
