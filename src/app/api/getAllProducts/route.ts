@@ -3,17 +3,19 @@ import Product from '@/app/models/Product';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(req:any, res:any) {
   try {
-    const cookieStore = await cookies();
-    cookieStore.set({
-      name: 'name',
-      value: 'lee',
-      httpOnly: true,
-      path: '/',
-    })
+   // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', 'https://marmil.vercel.app'); // Allow your frontend's domain
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Handle preflight requests (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
     // Get pagination parameters from query string (default to page 1 and 10 items per page)
-    const url = new URL(request.url);
+    const url = new URL(req.url);
     const page = parseInt(url.searchParams.get('page') || '1', 10);
     const limit = parseInt(url.searchParams.get('limit') || '2', 10);  // default to 2 items per page
     const skip = (page - 1) * limit;
