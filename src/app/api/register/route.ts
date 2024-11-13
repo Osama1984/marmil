@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     const filename = `${Date.now()}_${profileImage.name.replaceAll(" ", "_")}`;
     
     // Define the upload directory
-    const uploadDir = path.join(process.cwd(), "/tmp/public/uploads");
+    const uploadDir = path.join("/tmp","/public/uploads");
     
     // Create the uploads directory if it doesn't exist
     await mkdir(uploadDir, { recursive: true });
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       state: selectedState,
       zipCode,
       phone: phoneNumber,
-      profileImage: `public//uploads/${filename}`, // Save the relative URL for the image
+      profileImage: `${uploadDir}/${filename}`, // Save the relative URL for the image
       emailVerificationToken, // Save the verification token
       emailVerificationTokenExpiration, // Save the expiration timestamp
     });
