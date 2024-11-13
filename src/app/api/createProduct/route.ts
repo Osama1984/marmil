@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Directory to save images
-    const uploadDir = path.join(process.cwd(), '/tmp', 'uploads');
+    const uploadDir = path.join(process.cwd(), '/tmp/public/', 'uploads');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       const buffer = await mainImage.arrayBuffer();
       const fileBuffer = Buffer.from(buffer);
       fs.writeFileSync(mainImagePathOnDisk, fileBuffer);
-      mainImagePath = `/tmp/uploads/${mainImageFilename}`;
+      mainImagePath = `/tmp/public/uploads/${mainImageFilename}`;
     } else if (typeof mainImage === 'string') {
       // If mainImage is a string (URL), directly use the URL
       mainImagePath = mainImage; // No file upload needed
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         const buffer = await file.arrayBuffer();
         const fileBuffer = Buffer.from(buffer);
         fs.writeFileSync(otherImagePathOnDisk, fileBuffer);
-        otherImagePaths.push(`/tmp/uploads/${otherImageFilename}`);
+        otherImagePaths.push(`/tmp/public/uploads/${otherImageFilename}`);
       } else if (typeof file === 'string') {
         // If it's a string (URL), directly append it
         otherImagePaths.push(file);
