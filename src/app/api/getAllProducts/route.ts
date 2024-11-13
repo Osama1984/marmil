@@ -1,10 +1,17 @@
 import connectDB from '@/app/config/connection';
 import Product from '@/app/models/Product';
-import { ErrorProps } from 'next/error';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: 'name',
+      value: 'lee',
+      httpOnly: true,
+      path: '/',
+    })
     // Get pagination parameters from query string (default to page 1 and 10 items per page)
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1', 10);
