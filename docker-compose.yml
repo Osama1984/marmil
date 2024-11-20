@@ -1,0 +1,34 @@
+services:
+  frontend:
+    build:
+      context: ./marmil_frontend
+    container_name: marmil_frontend
+    ports:
+      - "4200:4200"
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./marmil_backend  
+    container_name: marmil_backend
+    ports:
+      - "3000:3000" 
+    networks:
+      - app-network
+
+  nginx:
+    build:
+      context: ./marmil_nginx 
+    container_name: marmil_nginx
+    ports:
+      - "8080:80" 
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

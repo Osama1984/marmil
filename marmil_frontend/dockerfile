@@ -1,0 +1,35 @@
+# Stage 1: Build the Angular application
+FROM node:20 AS build
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json to install dependencies
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the entire project to the container
+COPY . .
+
+# Build the Angular application in production mode
+RUN npm run build --prod
+
+# Stage 2: Serve the application using http-server
+FROM node:20
+
+# Install a simple HTTP server to serve the Angular app
+RUN npm install -g http-server
+
+# Set the working directory to where we want to serve the app
+WORKDIR /app
+
+# Copy the built Angular app from the build stage (browser folder is the correct directory)
+COPY --from=build /app/dist/marmil_frontend/browser /app
+
+# Expose port 4200 (or any other port you prefer)
+EXPOSE 4200
+
+# Start the http-server to serve the built Angular application
+CMD ["http-server", ".", "--port", "4200", "--host", "0.0.0.0"]
